@@ -26,3 +26,6 @@ Overview with data-state banner (no data vs. no threats), alert triage with bulk
 12. Tablet-size screenshots and a manual screen-reader pass.
 
 Limits: the lifecycle New→Triage→…→Review→Closed differs from the implemented state machine (see DECISIONS.md); changing it is a deliberate decision, not yet made.
+
+## Update
+Homepage storytelling redesign shipped; see section 7 of docs/design/AEGISSOC-PREMIUM-REDESIGN.md. Item 10 (public site pages) is partly addressed by the single-page homepage sections only.

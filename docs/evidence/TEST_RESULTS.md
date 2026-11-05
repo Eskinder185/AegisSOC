@@ -29,3 +29,11 @@ Backend was not changed in this tranche, so the 58-test backend run above was no
 | End-to-end (all specs) | `npx playwright test` (apps/web, real API + DB) | **27 passed**: prior 23 (axe scans re-run under the new dark default) + topology empty state / real hosts / table alternative / deep link, topology axe scan, landing phone no-overflow, landing screenshots |
 | Unit / typecheck / build | `npm test`, `npx tsc --noEmit`, `npm run build` | 7 passed / clean / ok. App bundle 283 kB (88 kB gzip); the 3D chunk (922 kB, 244 kB gzip) loads only on the landing page |
 Visual review so far: dark desktop landing + hero (1440), phone landing hero (375), topology (1360). Light theme, 768 px and 1920 px were **not** reviewed. 3D performance on real mobile hardware is **not measured**.
+
+## Storytelling redesign (2026-11-05)
+| Suite | Command | Result |
+|---|---|---|
+| End-to-end (all specs) | `npx playwright test` (apps/web, real API + DB) | **46 passed** on the final run: prior 27 + 20 in `story.spec.ts` (3D default, step controls, autoplay and pause, every object and connection explains itself, Analyst/Basic modes, 2D diagram by keyboard, four scenarios with arrow-key tabs, glossary, capability wording, axe in dark and light, no-WebGL fallback, reduced motion, no horizontal overflow at 375/768/1280/1920, phone default). (Count includes the screenshot harness.) |
+| Unit / typecheck / build | `npm test`, `npx tsc --noEmit`, `npm run build` | 7 passed / clean / ok. App bundle 316 kB (98 kB gzip); StoryScene chunk 967 kB (256 kB gzip), homepage only |
+**Flakiness, not explained:** two earlier full runs each had one failure (Journey 5, then the topology test) that did not reproduce in four re-runs; the final full run was 46/46. The failing runs' artifacts were overwritten. Likely load-related timing (software WebGL on the test machine) but this is a guess.
+Visual review done at 1920/1440/1280/768/375 (dark), every story step, explore mode, selected-object panel, Analyst mode, scenarios, and light theme step 3. Real-device 3D performance is **not measured**.
