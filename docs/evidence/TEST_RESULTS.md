@@ -1,0 +1,17 @@
+# Test results – 2026-11-05 (Windows 11, JDK 25.0.5, Node 22.18, Docker Desktop, Postgres 16 container)
+
+| Suite | Command | Result |
+|---|---|---|
+| Backend unit + integration (Testcontainers Postgres) | `mvn -f apps/api/pom.xml test` | **58 passed, 0 failed, 0 skipped** in one clean run (RuleSuiteTest 8, PipelineIT 8, WorkflowIT 7, SecurityAndSafetyIT 14, DetectionEngineeringIT 9, AiIT 10, ReportsIT 2) |
+| Frontend unit | `npm test` (apps/web) | 7 passed |
+| Frontend typecheck | `npx tsc --noEmit` | clean (strict) |
+| Production build | `vite build` | ok; main bundle 274 kB (85 kB gzip) |
+| End-to-end (Playwright, Chromium, real API + DB) | `npx playwright test journeys.spec.ts` | **16 passed**: journeys 1–7, viewer permissions, phone drawer/no overflow, axe WCAG 2.2 A/AA on /login, /app, /alerts, /hunt, /detections, /response, /reports with zero serious/critical violations |
+| Dependency audit (web) | `npm audit` | 10 moderate, all in dev-only ESLint/minimatch chain (not shipped). Backend dependency scan **not run**. |
+
+## What these results do and do not show
+- Detection results are on a small hand-labelled **synthetic** suite: 0 false positives and 0 misses for all 9 rules. This is a regression check, not real-world effectiveness.
+- Deterministic fixture ingest produces predictable counts (e.g. 28 events/1 alert for `credential_attack`; 12 alerts for the six detection scenarios).
+- Security tests cover: unauthenticated access, CSRF, lockout, role bypass, HTML/formula injection, oversize and deeply nested input, SQL-injection-shaped filters, audit tampering, disabled connectors, illegal state transitions, forged/self approval, prompt injection and hostile model output.
+- Not done: load/benchmark measurements (**not measured**), memory/disk footprint, manual screen-reader and keyboard audit, Docker image builds, CI on GitHub, upgrade-migration test (only a fresh-DB migration is exercised).
+- Observed during e2e: an unrelated app already owned port 5173, so the dev UI uses 5180.

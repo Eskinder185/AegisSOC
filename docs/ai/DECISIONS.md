@@ -1,0 +1,11 @@
+# Decisions
+- **Nested repo** inside the home-dir git repo (which has unrelated changes): `git init` in `AegisSOC/`, branch `dev/initial-build`.
+- **Java 25** (pom changed externally from 21; Spring Boot 3.5.16 supports it); portable JDK in `.tools/`.
+- **JdbcClient + SQL** instead of JPA: explicit queries, fewer moving parts; Flyway V1 schema.
+- **Closed, regex-free rule DSL** (match/threshold/sequence/absence/indicator) → no catastrophic regex, easy explanation and labelled testing.
+- **Detection per ingestion run + 1 h look-back**, dedupe key `rule|group|first-event-time` → idempotent replays; absence rules are run-scoped.
+- **Fixture anchor** = now minus scenario span, stable within a 10-minute window so rapid replays dedupe.
+- **Session cookies + CSRF** instead of JWT; same-origin via Vite/nginx proxy.
+- **Tailwind 4 + CSS variables**, native `<dialog>`, hand-rolled SVG charts with text alternatives; no chart library.
+- **AI**: deterministic engine is the source of truth; model output only accepted after validation; loopback-only provider; no cloud adapter.
+- **Ports**: DB 5433, API 8080, web 5180 (5432/5173 were occupied by unrelated software).
