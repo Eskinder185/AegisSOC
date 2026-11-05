@@ -15,3 +15,10 @@
 - Security tests cover: unauthenticated access, CSRF, lockout, role bypass, HTML/formula injection, oversize and deeply nested input, SQL-injection-shaped filters, audit tampering, disabled connectors, illegal state transitions, forged/self approval, prompt injection and hostile model output.
 - Not done: load/benchmark measurements (**not measured**), memory/disk footprint, manual screen-reader and keyboard audit, Docker image builds, CI on GitHub, upgrade-migration test (only a fresh-DB migration is exercised).
 - Observed during e2e: an unrelated app already owned port 5173, so the dev UI uses 5180.
+
+## UX tranche 1 (2026-11-05): palette, shortcuts, saved views, collapsible sidebar
+| Suite | Command | Result |
+|---|---|---|
+| End-to-end (all specs) | `npx playwright test` (apps/web, real API + DB) | **23 passed**: the 16 earlier journeys plus 6 in `productivity.spec.ts` (palette navigation and real alert search, palette axe scan, `g`-chord shortcuts and help dialog, j/k/x/Enter triage, saved views, sidebar collapse persistence) and the screenshot harness |
+| Frontend unit / typecheck / build | `npm test`, `npx tsc --noEmit`, `npm run build` | 7 passed / clean / ok |
+Backend was not changed in this tranche, so the 58-test backend run above was not repeated.

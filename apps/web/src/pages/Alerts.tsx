@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCheck, UserPlus } from 'lucide-react'
+import { Bookmark, CheckCheck, Trash2, UserPlus } from 'lucide-react'
 import { api, qs } from '../api/client'
 import type { AlertRow, Page } from '../api/types'
 import { useAuth } from '../lib/auth'
@@ -16,6 +16,12 @@ export const RESOLUTIONS = [
   ['INCONCLUSIVE', 'Inconclusive: not enough evidence either way'],
 ] as const
 
+interface SavedView { name: string; query: string }
+const VIEWS_KEY = 'aegis.alertViews'
+function loadViews(): SavedView[] {
+  try { const v = JSON.parse(localStorage.getItem(VIEWS_KEY) ?? '[]'); return Array.isArray(v) ? v.filter((x) => typeof x?.name === 'string' && typeof x?.query === 'string') : [] } catch { return [] }
+}
+
 const STATUSES = ['NEW', 'ACKNOWLEDGED', 'INVESTIGATING', 'ESCALATED', 'SUPPRESSED', 'CLOSED']
 
 export function Alerts() {
@@ -29,6 +35,12 @@ export function Alerts() {
   const [resolution, setResolution] = useState('FALSE_POSITIVE')
   const [note, setNote] = useState('')
   const [assignee, setAssignee] = useState('')
+  const nav = useNavigate()
+  const [cursor, setCursor] = useState(-1)
+  const [views, setViews] = useState<SavedView[]>(loadViews)
+  const [viewName, setViewName] = useState('')
+  const [viewOpen, setViewOpen] = useState(false)
+  const persistViews = (v: SavedView[]) => { setViews(v); try { localStorage.setItem(VIEWS_KEY, JSON.stringify(v)) } catch { /* storage unavailable */ } }
 
   const page = Number(sp.get('page') ?? 0)
   const filters = { status: sp.get('status') ?? '', severity: sp.get('severity') ?? '', rule: sp.get('rule') ?? '', assignee: sp.get('assignee') ?? '', q: sp.get('q') ?? '', openOnly: sp.get('openOnly') ?? '' }
@@ -55,6 +67,21 @@ export function Alerts() {
   })
 
   const items = q.data?.items ?? []
+  useEffect(() => { setCursor(-1) }, [q.data])
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]')) return
+      if (t && (/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(t.tagName) || t.isContentEditable)) return
+      if (e.key === 'j') setCursor((c) => Math.min(c + 1, items.length - 1))
+      else if (e.key === 'k') setCursor((c) => Math.max(c - 1, 0))
+      else if (e.key === 'Enter' && cursor >= 0 && items[cursor]) nav(`/app/alerts/${items[cursor].id}`)
+      else if (e.key === 'x' && can('ANALYST') && cursor >= 0 && items[cursor]) { const id = items[cursor].id; setSelected((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]) }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [items, cursor, nav, can])
+  useEffect(() => { document.querySelector('[data-cursor="true"]')?.scrollIntoView({ block: 'nearest' }) }, [cursor])
   const allOnPage = items.length > 0 && items.every((a) => selected.includes(a.id))
 
   return (
@@ -77,6 +104,12 @@ export function Alerts() {
           <Field label="Owner" htmlFor="f-owner">
             <select id="f-owner" className="select" value={filters.assignee} onChange={(e) => set('assignee', e.target.value)}><option value="">Anyone</option><option value="unassigned">Unassigned</option>{users.data?.filter((u) => u.enabled).map((u) => <option key={u.username} value={u.username}>{u.username}</option>)}</select>
           </Field>
+          <Field label="Saved views" htmlFor="f-views">
+            <select id="f-views" className="select" value="" onChange={(e) => { const v = views.find((x) => x.name === e.target.value); if (v) { setSp(new URLSearchParams(v.query), { replace: true }); setSelected([]) } }}>
+              <option value="">{views.length ? 'Choose a view' : 'None saved'}</option>{views.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
+            </select>
+          </Field>
+          <button className="btn btn-sm" onClick={() => setViewOpen(true)} disabled={sp.toString() === ''} title={sp.toString() === '' ? 'Set a filter first' : undefined}><Bookmark size={15} aria-hidden="true" /> Save view</button>
           {(sp.toString() !== '') && <button className="btn btn-ghost" onClick={() => { setSp({}, { replace: true }); setSelected([]) }}>Clear filters</button>}
         </FilterBar>
 
@@ -104,7 +137,7 @@ export function Alerts() {
                   </thead>
                   <tbody>
                     {d.items.map((a) => (
-                      <tr key={a.id}>
+                      <tr key={a.id} data-cursor={items[cursor]?.id === a.id} className={items[cursor]?.id === a.id ? 'outline outline-2 -outline-offset-2 outline-[var(--accent)]' : ''}>
                         {can('ANALYST') && <td><input type="checkbox" aria-label={`Select alert ${a.id}`} checked={selected.includes(a.id)} onChange={(e) => setSelected((s) => e.target.checked ? [...s, a.id] : s.filter((x) => x !== a.id))} /></td>}
                         <td className="max-w-[360px]">
                           <Link className="row-link" to={`/app/alerts/${a.id}`}>{a.title}</Link>
@@ -133,6 +166,12 @@ export function Alerts() {
           <Field label="Resolution" htmlFor="b-res"><select id="b-res" className="select" value={resolution} onChange={(e) => setResolution(e.target.value)}>{RESOLUTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
           <Field label="Why? (required, kept in the audit trail)" htmlFor="b-note"><textarea id="b-note" className="textarea" value={note} onChange={(e) => setNote(e.target.value)} /></Field>
         </div>
+      </Modal>
+      <Modal open={viewOpen} onClose={() => setViewOpen(false)} title="Save this filter as a view"
+        footer={<><button className="btn" onClick={() => setViewOpen(false)}>Cancel</button><button className="btn btn-primary" disabled={!viewName.trim()} onClick={() => { const name = viewName.trim(); const p = new URLSearchParams(sp); p.delete('page'); persistViews([...views.filter((v) => v.name !== name), { name, query: p.toString() }]); setViewOpen(false); setViewName(''); toast.push('ok', `View "${name}" saved in this browser.`) }}>Save view</button></>}>
+        <Field label="View name" htmlFor="v-name"><input id="v-name" className="input" value={viewName} maxLength={60} onChange={(e) => setViewName(e.target.value)} /></Field>
+        <p className="muted mt-2 text-xs">Views are stored only in this browser. Current filters: {sp.toString() || 'none'}.</p>
+        {views.length > 0 && <ul className="mt-3 space-y-1">{views.map((v) => <li key={v.name} className="flex items-center justify-between text-sm"><span>{v.name}</span><button className="btn btn-ghost btn-sm" aria-label={`Delete view ${v.name}`} onClick={() => persistViews(views.filter((x) => x.name !== v.name))}><Trash2 size={14} aria-hidden="true" /></button></li>)}</ul>}
       </Modal>
       <Modal open={assignOpen} onClose={() => setAssignOpen(false)} title={`Assign ${selected.length} alert(s)`}
         footer={<><button className="btn" onClick={() => setAssignOpen(false)}>Cancel</button><button className="btn btn-primary" disabled={!assignee || bulk.isPending} onClick={() => bulk.mutate({ action: 'assign', assignee })}>Assign</button></>}>

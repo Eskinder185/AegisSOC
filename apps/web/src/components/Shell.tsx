@@ -3,13 +3,14 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Activity, Bell, BookOpenCheck, Bot, ClipboardList, FlaskConical, LayoutDashboard, LogOut, Menu, Moon, Radar, ScrollText, Search, Settings, Shield,
-  ShieldAlert, Siren, Sun, Swords, Server, Globe2, BarChart3, X,
+  ShieldAlert, Siren, Sun, Swords, Server, Globe2, BarChart3, X, PanelLeftClose, PanelLeftOpen, Command as CommandIcon, ChevronRight,
 } from 'lucide-react'
 import { api } from '../api/client'
 import { useAuth } from '../lib/auth'
 import { usePrefs } from '../lib/prefs'
 import { titleCase } from '../lib/format'
 import { SyntheticBadge, Time } from './ui'
+import { CommandPalette, ShortcutsDialog, type Command } from './CommandPalette'
 
 const NAV: { to: string; label: string; icon: typeof Shield; end?: boolean; group: string }[] = [
   { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true, group: 'Work' },
@@ -104,22 +105,51 @@ export function Shell() {
   const main = useRef<HTMLElement>(null)
   useEffect(() => { setDrawer(false); main.current?.focus({ preventScroll: true }); window.scrollTo(0, 0) }, [loc.pathname])
   const groups = Array.from(new Set(NAV.map((n) => n.group)))
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('aegis.nav') === 'collapsed')
+  const [palette, setPalette] = useState(false)
+  const [help, setHelp] = useState(false)
+  const toggleNav = () => setCollapsed((c) => { try { localStorage.setItem('aegis.nav', c ? 'open' : 'collapsed') } catch { /* ignore */ } return !c })
 
-  const sidebar = (
-    <nav aria-label="Primary" className="flex h-full flex-col gap-5 overflow-y-auto p-4">
+  const commands: Command[] = [
+    ...NAV.map((n) => ({ id: n.to, label: n.label, hint: 'Go to page', group: 'Pages', run: () => nav(n.to) })),
+    { id: 'theme', label: theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme', group: 'Actions', run: toggleTheme },
+    { id: 'utc', label: utc ? 'Show times in local time zone' : 'Show times in UTC', group: 'Actions', run: toggleUtc },
+    { id: 'help', label: 'Keyboard shortcuts', group: 'Actions', run: () => setHelp(true) },
+    { id: 'signout', label: 'Sign out', group: 'Actions', run: async () => { await signOut(); nav('/login') } },
+  ]
+
+  useEffect(() => {
+    let chord = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const GO: Record<string, string> = { o: '/app', a: '/app/alerts', c: '/app/incidents', h: '/app/hunt', s: '/app/sources', d: '/app/detections', r: '/app/reports' }
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette((p) => !p); return }
+      const t = e.target as HTMLElement | null
+      if (e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]')) return
+      if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return
+      if (chord) { chord = false; clearTimeout(timer); const dest = GO[e.key.toLowerCase()]; if (dest) { e.preventDefault(); nav(dest) } return }
+      if (e.key === 'g') { chord = true; timer = setTimeout(() => { chord = false }, 1200) }
+      else if (e.key === '?') { e.preventDefault(); setHelp(true) }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('keydown', onKey); clearTimeout(timer) }
+  }, [nav])
+
+  const sidebar = (compact: boolean) => (
+    <nav aria-label="Primary" className={`flex h-full flex-col gap-5 overflow-y-auto ${compact ? 'p-2' : 'p-4'}`}>
       {groups.map((g) => (
         <div key={g}>
-          <div className="card-title mb-1.5 px-3">{g}</div>
+          {compact ? <hr className="my-1 border-[var(--line)]" /> : <div className="card-title mb-1.5 px-3">{g}</div>}
           <ul className="space-y-0.5">
             {NAV.filter((n) => n.group === g).map((n) => (
               <li key={n.to}>
-                <NavLink to={n.to} end={n.end} className="nav-link"><n.icon size={18} aria-hidden="true" />{n.label}</NavLink>
+                <NavLink to={n.to} end={n.end} className={`nav-link ${compact ? 'justify-center' : ''}`} title={compact ? n.label : undefined}><n.icon size={18} aria-hidden="true" /><span className={compact ? 'sr-only' : ''}>{n.label}</span></NavLink>
               </li>
             ))}
           </ul>
         </div>
       ))}
-      <div className="muted mt-auto px-3 pt-4 text-xs">
+      <div className={`muted mt-auto px-3 pt-4 text-xs ${compact ? 'hidden' : ''}`}>
         <p>AegisSOC 0.1 · local build</p>
         <p>AI assists; people decide.</p>
       </div>
@@ -135,8 +165,15 @@ export function Shell() {
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent)] text-[var(--accent-ink)]"><Shield size={20} aria-hidden="true" /></span>
           <span className="hidden text-lg sm:inline">AegisSOC</span>
         </Link>
+        <button className="btn btn-ghost btn-icon hidden lg:inline-flex" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-pressed={collapsed} onClick={toggleNav}>
+          {collapsed ? <PanelLeftOpen size={19} aria-hidden="true" /> : <PanelLeftClose size={19} aria-hidden="true" />}
+        </button>
         <div className="ml-2 hidden md:block"><DataStatePill /></div>
         <div className="ml-auto flex items-center gap-1">
+          <button className="btn btn-sm hidden sm:inline-flex" onClick={() => setPalette(true)} aria-label="Open command palette" aria-keyshortcuts="Control+K Meta+K">
+            <CommandIcon size={14} aria-hidden="true" /> Search or jump to… <span className="kbd ml-2">Ctrl K</span>
+          </button>
+          <button className="btn btn-ghost btn-icon sm:hidden" aria-label="Open command palette" onClick={() => setPalette(true)}><Search size={19} aria-hidden="true" /></button>
           <button className="btn btn-ghost btn-sm hidden sm:inline-flex" onClick={toggleUtc} title="Switch between your local time zone and UTC for absolute times" aria-pressed={utc}>
             {utc ? 'UTC' : Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace('_', ' ')}
           </button>
@@ -154,8 +191,8 @@ export function Shell() {
         </div>
       </header>
 
-      <div className="lg:grid lg:grid-cols-[260px_1fr]">
-        <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] border-r border-[var(--line)] bg-[var(--surface)] lg:block">{sidebar}</aside>
+      <div className={`lg:grid ${collapsed ? 'lg:grid-cols-[64px_1fr]' : 'lg:grid-cols-[260px_1fr]'}`}>
+        <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] border-r border-[var(--line)] bg-[var(--surface)] lg:block">{sidebar(collapsed)}</aside>
         {drawer && (
           <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
             <button className="absolute inset-0 bg-black/50" aria-label="Close menu" onClick={() => setDrawer(false)} />
@@ -165,12 +202,12 @@ export function Shell() {
                 <button className="btn btn-ghost btn-icon btn-sm" aria-label="Close menu" onClick={() => setDrawer(false)}><X size={18} aria-hidden="true" /></button>
               </div>
               <div className="px-4 pt-3 md:hidden"><DataStatePill /></div>
-              {sidebar}
+              {sidebar(false)}
             </div>
           </div>
         )}
         <main id="main" ref={main} tabIndex={-1} className="min-w-0 px-4 py-6 outline-none sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1280px]"><Outlet /></div>
+          <div className="mx-auto max-w-[1280px]"><Breadcrumbs path={loc.pathname} /><Outlet /></div>
           <footer className="muted mx-auto mt-12 flex max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--line)] pt-4 text-xs">
             <span className="inline-flex items-center gap-1"><ScrollText size={13} aria-hidden="true" /> Actions are audited.</span>
             <span className="inline-flex items-center gap-1"><ShieldAlert size={13} aria-hidden="true" /> No real system is ever changed by AegisSOC.</span>
@@ -178,6 +215,27 @@ export function Shell() {
           </footer>
         </main>
       </div>
+      <CommandPalette open={palette} onClose={() => setPalette(false)} commands={commands} />
+      <ShortcutsDialog open={help} onClose={() => setHelp(false)} />
     </div>
+  )
+}
+
+const CRUMB: Record<string, string> = { alerts: 'Alerts', incidents: 'Cases', hunt: 'Hunt', assets: 'Assets & coverage', detections: 'Detections', intel: 'Threat intel', response: 'Response center', reports: 'Reports', sources: 'Data sources', lab: 'Lab & demos', ai: 'AI analyst', settings: 'Settings & audit' }
+
+/** Shown only on detail pages, where "where am I and how do I go back" matters. */
+function Breadcrumbs({ path }: { path: string }) {
+  const parts = path.replace(/^\/app\/?/, '').split('/').filter(Boolean)
+  if (parts.length < 2) return null
+  return (
+    <nav aria-label="Breadcrumb" className="muted mb-3 text-sm">
+      <ol className="flex flex-wrap items-center gap-1">
+        <li><Link to="/app">Overview</Link></li>
+        <li aria-hidden="true"><ChevronRight size={14} /></li>
+        <li><Link to={`/app/${parts[0]}`}>{CRUMB[parts[0]] ?? parts[0]}</Link></li>
+        <li aria-hidden="true"><ChevronRight size={14} /></li>
+        <li aria-current="page" className="text-[var(--ink)]">{parts[0] === 'alerts' ? 'Alert' : parts[0] === 'incidents' ? 'Case' : parts[0] === 'detections' ? 'Rule' : ''} {parts[1]}</li>
+      </ol>
+    </nav>
   )
 }
