@@ -1,0 +1,42 @@
+import { test } from '@playwright/test'
+import { login, resetData, runDemo } from './helpers'
+
+// Visual review harness: writes screenshots to SHOTS_DIR (default ./test-results/screens). Not an assertion suite.
+const DIR = process.env.SHOTS_DIR ?? 'test-results/screens'
+
+test('capture key screens', async ({ page, request }) => {
+  test.setTimeout(180_000)
+  await resetData(request)
+  await page.goto('/')
+  await page.screenshot({ path: `${DIR}/01-landing.png`, fullPage: true })
+  await login(page, 'analyst')
+  await page.waitForSelector('text=Command center')
+  await page.screenshot({ path: `${DIR}/02-overview-empty.png`, fullPage: true })
+  await runDemo(page)
+  await page.waitForTimeout(800)
+  await page.screenshot({ path: `${DIR}/03-overview-demo.png`, fullPage: true })
+  await page.goto('/app/alerts')
+  await page.waitForSelector('table')
+  await page.screenshot({ path: `${DIR}/04-alerts.png`, fullPage: true })
+  await page.getByRole('link', { name: /Repeated failed sign-ins/ }).first().click()
+  await page.waitForSelector('text=Understand this alert')
+  await page.screenshot({ path: `${DIR}/05-alert-detail.png`, fullPage: true })
+  await page.goto('/app/hunt')
+  await page.waitForSelector('table')
+  await page.screenshot({ path: `${DIR}/06-hunt.png`, fullPage: true })
+  await page.goto('/app/assets')
+  await page.waitForSelector('text=Host × expected signal')
+  await page.screenshot({ path: `${DIR}/07-coverage.png`, fullPage: true })
+  await page.goto('/app/detections/AEG-AUTH-001')
+  await page.waitForSelector('text=Version history')
+  await page.screenshot({ path: `${DIR}/08-rule.png`, fullPage: true })
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.goto('/app')
+  await page.getByRole('button', { name: /Switch to dark theme/ }).click().catch(() => {})
+  await page.waitForTimeout(500)
+  await page.screenshot({ path: `${DIR}/09-overview-dark.png`, fullPage: true })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/app')
+  await page.waitForTimeout(800)
+  await page.screenshot({ path: `${DIR}/10-overview-phone.png`, fullPage: true })
+})

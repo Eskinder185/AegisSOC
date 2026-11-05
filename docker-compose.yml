@@ -41,7 +41,7 @@ services:
     build: { context: ./apps/web }
     depends_on: [api]
     ports:
-      - "127.0.0.1:${AEGIS_WEB_PORT:-5173}:8080"
+      - "127.0.0.1:${AEGIS_WEB_PORT:-5180}:8080"
     deploy:
       resources:
         limits: { memory: 128M }

@@ -37,6 +37,8 @@ public abstract class IntegrationTestBase {
         r.add("spring.datasource.username", PG::getUsername);
         r.add("spring.datasource.password", PG::getPassword);
         r.add("aegis.dev-password", () -> PASSWORD);
+        r.add("aegis.ai.provider", () -> "mock");
+        r.add("aegis.ai.timeout-seconds", () -> "1");
     }
 
     @Autowired protected MockMvc mvc;
@@ -50,6 +52,7 @@ public abstract class IntegrationTestBase {
         jdbc.sql("DELETE FROM rule_test_runs").update();
         jdbc.sql("DELETE FROM rule_versions WHERE version > 1").update();
         jdbc.sql("UPDATE detection_rules SET current_version = 1, enabled = TRUE").update();
+        jdbc.sql("DELETE FROM system_settings").update();
         jdbc.sql("UPDATE data_sources SET enabled = TRUE WHERE source_type IN ('fixture','suricata_eve','json_ingest')").update();
     }
 
