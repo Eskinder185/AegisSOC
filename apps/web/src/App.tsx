@@ -21,6 +21,7 @@ const Intel = lazy(() => import('./pages/Intel').then((m) => ({ default: m.Intel
 const Response = lazy(() => import('./pages/Response').then((m) => ({ default: m.Response })))
 const Reports = lazy(() => import('./pages/Reports').then((m) => ({ default: m.Reports })))
 const Sources = lazy(() => import('./pages/Sources').then((m) => ({ default: m.Sources })))
+const Topology = lazy(() => import('./pages/Topology').then((m) => ({ default: m.Topology })))
 const Lab = lazy(() => import('./pages/Lab').then((m) => ({ default: m.Lab })))
 const AiAnalyst = lazy(() => import('./pages/AiAnalyst').then((m) => ({ default: m.AiAnalyst })))
 const SettingsPage = lazy(() => import('./pages/Settings').then((m) => ({ default: m.SettingsPage })))
@@ -53,6 +54,7 @@ export function App() {
           <Route path="response" element={<Response />} />
           <Route path="reports" element={<Reports />} />
           <Route path="sources" element={<Sources />} />
+          <Route path="topology" element={<Topology />} />
           <Route path="lab" element={<Lab />} />
           <Route path="ai" element={<AiAnalyst />} />
           <Route path="settings" element={<SettingsPage />} />

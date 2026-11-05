@@ -22,3 +22,10 @@
 | End-to-end (all specs) | `npx playwright test` (apps/web, real API + DB) | **23 passed**: the 16 earlier journeys plus 6 in `productivity.spec.ts` (palette navigation and real alert search, palette axe scan, `g`-chord shortcuts and help dialog, j/k/x/Enter triage, saved views, sidebar collapse persistence) and the screenshot harness |
 | Frontend unit / typecheck / build | `npm test`, `npx tsc --noEmit`, `npm run build` | 7 passed / clean / ok |
 Backend was not changed in this tranche, so the 58-test backend run above was not repeated.
+
+## Redesign tranche 1 (2026-11-05): design tokens, landing + 3D hero, Topology Explorer
+| Suite | Command | Result |
+|---|---|---|
+| End-to-end (all specs) | `npx playwright test` (apps/web, real API + DB) | **27 passed**: prior 23 (axe scans re-run under the new dark default) + topology empty state / real hosts / table alternative / deep link, topology axe scan, landing phone no-overflow, landing screenshots |
+| Unit / typecheck / build | `npm test`, `npx tsc --noEmit`, `npm run build` | 7 passed / clean / ok. App bundle 283 kB (88 kB gzip); the 3D chunk (922 kB, 244 kB gzip) loads only on the landing page |
+Visual review so far: dark desktop landing + hero (1440), phone landing hero (375), topology (1360). Light theme, 768 px and 1920 px were **not** reviewed. 3D performance on real mobile hardware is **not measured**.

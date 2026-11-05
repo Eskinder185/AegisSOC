@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, CircleHelp, Clock3, Info } from 'lucide-react'
 import { api } from '../api/client'
@@ -23,8 +23,10 @@ const STATE: Record<string, { label: string; Icon: typeof Info; cls: string; wor
 }
 
 export function Assets() {
-  const [tab, setTab] = useState<'coverage' | 'assets'>('coverage')
-  const [open, setOpen] = useState<string | null>(null)
+  const [sp] = useSearchParams()
+  const hostParam = sp.get('host')
+  const [tab, setTab] = useState<'coverage' | 'assets'>(hostParam ? 'assets' : 'coverage')
+  const [open, setOpen] = useState<string | null>(hostParam)
   const cov = useQuery({ queryKey: ['coverage'], queryFn: () => api<Coverage>('/api/coverage'), refetchInterval: 30_000 })
   const assets = useQuery({ queryKey: ['assets'], queryFn: () => api<Asset[]>('/api/assets') })
   const detail = useQuery({ queryKey: ['asset', open], queryFn: () => api<AssetDetail>(`/api/assets/${open}`), enabled: !!open })

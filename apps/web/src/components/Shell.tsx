@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Activity, Bell, BookOpenCheck, Bot, ClipboardList, FlaskConical, LayoutDashboard, LogOut, Menu, Moon, Radar, ScrollText, Search, Settings, Shield,
-  ShieldAlert, Siren, Sun, Swords, Server, Globe2, BarChart3, X, PanelLeftClose, PanelLeftOpen, Command as CommandIcon, ChevronRight,
+  ShieldAlert, Siren, Sun, Swords, Server, Globe2, BarChart3, X, PanelLeftClose, Waypoints, PanelLeftOpen, Command as CommandIcon, ChevronRight,
 } from 'lucide-react'
 import { api } from '../api/client'
 import { useAuth } from '../lib/auth'
@@ -18,6 +18,7 @@ const NAV: { to: string; label: string; icon: typeof Shield; end?: boolean; grou
   { to: '/app/incidents', label: 'Cases', icon: ClipboardList, group: 'Work' },
   { to: '/app/hunt', label: 'Hunt', icon: Search, group: 'Investigate' },
   { to: '/app/assets', label: 'Assets & coverage', icon: Server, group: 'Investigate' },
+  { to: '/app/topology', label: 'Topology', icon: Waypoints, group: 'Investigate' },
   { to: '/app/intel', label: 'Threat intel', icon: Globe2, group: 'Investigate' },
   { to: '/app/ai', label: 'AI analyst', icon: Bot, group: 'Investigate' },
   { to: '/app/response', label: 'Response center', icon: Swords, group: 'Act' },
@@ -221,7 +222,7 @@ export function Shell() {
   )
 }
 
-const CRUMB: Record<string, string> = { alerts: 'Alerts', incidents: 'Cases', hunt: 'Hunt', assets: 'Assets & coverage', detections: 'Detections', intel: 'Threat intel', response: 'Response center', reports: 'Reports', sources: 'Data sources', lab: 'Lab & demos', ai: 'AI analyst', settings: 'Settings & audit' }
+const CRUMB: Record<string, string> = { alerts: 'Alerts', incidents: 'Cases', hunt: 'Hunt', topology: 'Topology', assets: 'Assets & coverage', detections: 'Detections', intel: 'Threat intel', response: 'Response center', reports: 'Reports', sources: 'Data sources', lab: 'Lab & demos', ai: 'AI analyst', settings: 'Settings & audit' }
 
 /** Shown only on detail pages, where "where am I and how do I go back" matters. */
 function Breadcrumbs({ path }: { path: string }) {
