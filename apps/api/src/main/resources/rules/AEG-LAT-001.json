@@ -1,0 +1,23 @@
+{
+  "id": "AEG-LAT-001",
+  "name": "Possible lateral movement (hypothesis)",
+  "severity": "HIGH", "confidence": "LOW",
+  "purpose": "Connect a high-severity IDS alert to a successful sign-in from the same source address shortly afterwards.",
+  "description": "Sequence rule: IDS alert (severity >= 7) followed within 15 minutes by a successful authentication from the same source address. This is a HYPOTHESIS built from two independent observations.",
+  "attack": { "techniques": [], "justification": "Not asserted. Remote-service techniques (e.g. T1021) are candidates for analyst review, but two correlated events do not establish one." },
+  "definition": {
+    "type": "sequence",
+    "steps": [ { "event_class": "ids", "severity": { "gte": 7 } }, { "event_class": "authentication", "outcome": "success" } ],
+    "correlate_on": ["src_ip"],
+    "window_seconds": 900,
+    "hypothesis": true,
+    "playbook": {
+      "what": "A high-severity IDS alert and then a successful sign-in were both seen from {src_ip}.",
+      "why": "If the alert reflects a real exploit, the sign-in could be an attacker moving to another system. It could also be an unrelated coincidence.",
+      "howSure": "Low. This links two events by address and timing only. It is a hypothesis to check, not a finding.",
+      "next": ["Check who normally signs in from {src_ip} and whether the account used is expected.", "Compare the IDS alert destination with the sign-in destination.", "Review all activity from {src_ip} in the surrounding hour."],
+      "verify": ["The sign-in is confirmed as expected activity or investigated further.", "No further sign-ins from {src_ip} to additional hosts."],
+      "alternatives": ["Coincidence: an admin workstation triggers IDS noise and signs in for routine work.", "NAT or shared addresses merge unrelated users."]
+    }
+  }
+}

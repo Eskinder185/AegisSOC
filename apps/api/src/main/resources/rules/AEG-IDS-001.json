@@ -1,0 +1,22 @@
+{
+  "id": "AEG-IDS-001",
+  "name": "High-severity IDS alert",
+  "severity": "MEDIUM", "confidence": "LOW",
+  "purpose": "Promote high-severity network IDS alerts into the alert queue; ignore informational noise.",
+  "description": "Matches IDS alerts with normalized severity 7 or higher, grouped by source and destination address.",
+  "attack": { "techniques": [], "justification": "No technique is asserted: an IDS signature name does not by itself prove a specific adversary behaviour." },
+  "definition": {
+    "type": "match",
+    "filter": { "event_class": "ids", "severity": { "gte": 7 } },
+    "group_by": ["src_ip", "dst_ip"],
+    "window_seconds": 1800,
+    "playbook": {
+      "what": "The network sensor raised a high-severity alert for traffic from {src_ip} to {dst_ip}.",
+      "why": "The sensor thinks the traffic resembles a known attack pattern.",
+      "howSure": "Low to medium. Signatures produce false positives, and a match is not proof the attack succeeded.",
+      "next": ["Check whether {dst_ip} runs the service named in the signature.", "Look for sign-ins to the destination from {src_ip} shortly afterwards.", "Check whether a scanner or test is scheduled from {src_ip}."],
+      "verify": ["The destination shows no unexpected changes.", "The alert does not recur after remediation or is confirmed benign."],
+      "alternatives": ["Authorized vulnerability scan.", "Benign traffic that resembles a signature."]
+    }
+  }
+}

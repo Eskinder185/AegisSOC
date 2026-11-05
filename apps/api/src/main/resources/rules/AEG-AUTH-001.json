@@ -1,0 +1,26 @@
+{
+  "id": "AEG-AUTH-001",
+  "name": "Repeated failed sign-ins, then a success",
+  "severity": "MEDIUM", "confidence": "MEDIUM",
+  "purpose": "Find accounts that were guessed at rapidly, especially when a successful sign-in follows.",
+  "description": "Counts failed authentication events per account and source address inside a short window. A success from the same account and address shortly afterwards raises severity.",
+  "attack": { "techniques": ["T1110"], "justification": "Many failed authentications against one account from one source is the observable pattern of password guessing (Brute Force)." },
+  "definition": {
+    "type": "threshold",
+    "filter": { "event_class": "authentication", "outcome": "failure" },
+    "group_by": ["username", "src_ip"],
+    "window_seconds": 300,
+    "threshold": 5,
+    "followed_by": { "filter": { "event_class": "authentication", "outcome": "success" }, "within_seconds": 900 },
+    "severity_if_followed": "HIGH",
+    "playbook": {
+      "what": "Account {username} had {observedCount} failed sign-ins from {src_ip} within {windowSeconds} seconds.",
+      "followedText": "A successful sign-in for the same account and address followed, so someone got in after the failures.",
+      "why": "Rapid repeated failures are how password guessing looks. A success right after means the guess may have worked, or the real user finally typed the right password.",
+      "howSure": "Medium. The pattern is consistent with guessing, but a person who forgot a password or a misconfigured app can look similar. Failure count and source address are the strongest clues.",
+      "next": ["Ask the account owner whether they signed in from {src_ip} around this time.", "Check whether {src_ip} is a known corporate, VPN or home address.", "Search other sign-ins for {username} in the 24 hours around the alert (Hunt page).", "Check for privilege or configuration changes by {username} after the success."],
+      "verify": ["The account owner confirms or denies the activity.", "No further failed bursts from {src_ip} after any action taken.", "If credentials were reset, the old password no longer works and new sign-ins come from expected addresses."],
+      "alternatives": ["User mistyped a password repeatedly.", "A saved, outdated password in an app or script is retrying.", "A vulnerability scanner or authorized test is running."]
+    }
+  }
+}

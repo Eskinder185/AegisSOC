@@ -1,0 +1,13 @@
+.tools/
+.env
+node_modules/
+target/
+dist/
+*.log
+.idea/
+.vscode/
+playwright-report/
+test-results/
+coverage/
+*.iml
+.DS_Store

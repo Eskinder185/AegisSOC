@@ -1,0 +1,22 @@
+{
+  "id": "AEG-SVC-001",
+  "name": "Security service stopped",
+  "severity": "HIGH", "confidence": "MEDIUM",
+  "purpose": "Detect when a security sensor or logging service is stopped on a host.",
+  "description": "Matches stop events for a short, explicit list of security services (monitoring agent, antivirus, audit daemon, Sysmon).",
+  "attack": { "techniques": ["T1562.001"], "justification": "Stopping a security tool is the observable action of Impair Defenses: Disable or Modify Tools." },
+  "definition": {
+    "type": "match",
+    "filter": { "event_class": "service", "action": "stopped", "process_name": { "in": ["wazuh-agent", "windows-defender", "auditd", "sysmon"] } },
+    "group_by": ["host"],
+    "window_seconds": 3600,
+    "playbook": {
+      "what": "A security service was stopped on {host}.",
+      "why": "A stopped sensor creates a blind spot. Attackers sometimes stop security tools before acting; so do routine upgrades.",
+      "howSure": "Medium. Service stops are common during maintenance; the service name is what makes this notable.",
+      "next": ["Check for scheduled maintenance on {host}.", "Verify whether the service restarted and telemetry resumed.", "Review other events on {host} just before and after the stop."],
+      "verify": ["The service is running again and events from {host} resume.", "Coverage for {host} shows as observed (Assets page)."],
+      "alternatives": ["Planned patching or agent upgrade.", "Host shutdown or reboot."]
+    }
+  }
+}

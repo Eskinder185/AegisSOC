@@ -1,0 +1,20 @@
+{
+  "id": "AEG-TI-001",
+  "name": "Threat indicator observed",
+  "severity": "MEDIUM", "confidence": "LOW",
+  "purpose": "Match telemetry against the local indicator registry with clear provenance.",
+  "description": "Compares event domains and addresses with active local indicators. Allowlisted indicators are skipped. A match is context, not proof of compromise.",
+  "attack": { "techniques": [], "justification": "Not asserted: an indicator match shows contact with a listed value, not an adversary technique." },
+  "definition": {
+    "type": "indicator_match",
+    "window_seconds": 86400,
+    "playbook": {
+      "what": "Telemetry contacted {indicator}, which is in the local indicator registry.",
+      "why": "The indicator is listed as suspicious by its source. Contact suggests that the host interacted with something previously reported.",
+      "howSure": "Low. Indicators go stale, get reused and can be wrong. Check the indicator's source, confidence and age on the Threat Intel page.",
+      "next": ["Open the indicator and read its source and freshness.", "Find which process or user made the request.", "Look for other hosts contacting {indicator}."],
+      "verify": ["The contact is explained, or the host is investigated and the contact stops."],
+      "alternatives": ["A stale or incorrect indicator.", "Shared infrastructure used by legitimate services."]
+    }
+  }
+}

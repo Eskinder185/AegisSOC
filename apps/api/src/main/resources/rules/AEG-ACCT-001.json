@@ -1,0 +1,24 @@
+{
+  "id": "AEG-ACCT-001",
+  "name": "Privilege change shortly after sign-in",
+  "severity": "MEDIUM", "confidence": "LOW",
+  "purpose": "Highlight accounts that sign in and quickly change privileges.",
+  "description": "Sequence rule: successful authentication followed within 15 minutes by a privileged-group addition made by the same account. Approved automation accounts are excluded.",
+  "attack": { "techniques": [], "justification": "Not asserted: the sequence is suggestive, and legitimate administrators behave the same way." },
+  "definition": {
+    "type": "sequence",
+    "steps": [ { "event_class": "authentication", "outcome": "success" }, { "event_class": "privilege", "action": "added_to_privileged_group" } ],
+    "exclude": { "username": { "in": ["svc-patch"] } },
+    "correlate_on": ["username"],
+    "window_seconds": 900,
+    "hypothesis": true,
+    "playbook": {
+      "what": "{username} signed in and then changed privileged group membership within a few minutes.",
+      "why": "Quick privilege changes after a fresh sign-in can mean a newly obtained account is being used to gain access.",
+      "howSure": "Low. Administrators do this routinely. The sequence is a prompt to check, not evidence of compromise.",
+      "next": ["Confirm {username} is expected to perform administration.", "Check where the sign-in came from.", "Look for the same pattern on other hosts."],
+      "verify": ["The sequence is linked to an approved change, or access is reverted."],
+      "alternatives": ["Routine administration."]
+    }
+  }
+}

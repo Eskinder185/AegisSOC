@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: aegissoc-api
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5433/aegissoc}
+    username: ${SPRING_DATASOURCE_USERNAME:aegissoc}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+  flyway:
+    enabled: true
+    # Never clean in any profile: destructive resets go through the guarded dev-reset endpoint only.
+    clean-disabled: true
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  address: ${AEGIS_BIND_ADDRESS:127.0.0.1}   # loopback by default; Docker image overrides to 0.0.0.0 inside the container only
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: strict
+      timeout: 8h
+  tomcat:
+    max-http-form-post-size: 1MB
+    max-swallow-size: 2MB
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+aegis:
+  dev-password: ${AEGIS_DEV_PASSWORD:}
+  dev-reset-enabled: ${AEGIS_DEV_RESET_ENABLED:true}
+  ai:
+    provider: ${AEGIS_AI_PROVIDER:none}          # none | mock | ollama  (disabled unless explicitly configured)
+    ollama-url: ${AEGIS_AI_OLLAMA_URL:http://127.0.0.1:11434}
+    model: ${AEGIS_AI_MODEL:}
+    timeout-seconds: 20
+    max-context-events: 40
+  response:
+    live-execution-enabled: false               # no live execution path exists in this build; flag is checked by policy
+    proposal-ttl-hours: 24
+  ingest:
+    max-batch-events: 5000
+    max-upload-bytes: 2097152
+    max-json-depth: 12
+    max-field-length: 4096

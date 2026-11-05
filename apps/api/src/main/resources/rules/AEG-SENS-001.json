@@ -1,0 +1,22 @@
+{
+  "id": "AEG-SENS-001",
+  "name": "Telemetry silence",
+  "severity": "MEDIUM", "confidence": "MEDIUM",
+  "purpose": "Tell apart a quiet network from a sensor that stopped reporting.",
+  "description": "Flags hosts that reported at least 5 events but have been silent for more than 30 minutes relative to the newest event in the same data set. Hosts with too little history are reported as unknown, not silent.",
+  "attack": { "techniques": [], "justification": "Not asserted: silence can be an outage, a reboot, a network fault or tampering." },
+  "definition": {
+    "type": "absence",
+    "group_by": ["host"],
+    "silence_minutes": 30,
+    "min_history": 5,
+    "playbook": {
+      "what": "{host} has stopped sending events: last seen {lastSeen}, {silentMinutes} minutes before the newest data.",
+      "why": "While a source is silent, nothing it would have detected is visible. No alerts from a silent source does not mean no activity.",
+      "howSure": "Medium that the telemetry stopped; unknown why.",
+      "next": ["Check whether {host} is powered on and reachable through your normal tools.", "Check the agent or log forwarder on {host}.", "Review the last events from {host} before it went quiet."],
+      "verify": ["New events from {host} arrive and the coverage state returns to observed."],
+      "alternatives": ["Scheduled maintenance or reboot.", "Network or forwarder outage.", "A sensor being disabled (see AEG-SVC-001)."]
+    }
+  }
+}

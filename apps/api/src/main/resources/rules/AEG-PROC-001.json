@@ -1,0 +1,22 @@
+{
+  "id": "AEG-PROC-001",
+  "name": "Office application started a script interpreter with an encoded command",
+  "severity": "HIGH", "confidence": "MEDIUM",
+  "purpose": "Flag the document-to-script execution chain that is common in malicious attachments.",
+  "description": "Matches process creation where a document application is the parent of PowerShell/cmd/WScript and the command line contains encoded-command markers.",
+  "attack": { "techniques": ["T1059.001"], "justification": "PowerShell execution with an encoded command line is the observable action of Command and Scripting Interpreter: PowerShell." },
+  "definition": {
+    "type": "match",
+    "filter": { "event_class": "process", "parent_process": { "in": ["winword.exe", "excel.exe", "outlook.exe", "powerpnt.exe"] }, "process_name": { "in": ["powershell.exe", "cmd.exe", "wscript.exe", "cscript.exe"] }, "process_cmdline": { "contains_any": ["-enc", "-encodedcommand", "frombase64string"] } },
+    "group_by": ["host", "username"],
+    "window_seconds": 3600,
+    "playbook": {
+      "what": "On {host}, a document application started a script interpreter for {username} using an encoded command.",
+      "why": "Documents rarely need to launch hidden scripts. Encoded commands hide what the script does.",
+      "howSure": "Medium. In this data set the command is a labelled synthetic fixture. In real data, some legitimate macros behave this way.",
+      "next": ["Decode and read the command line safely (do not run it).", "Ask {username} what document they opened.", "Look for network connections from {host} right after (Hunt page)."],
+      "verify": ["The command's purpose is explained or the document is removed.", "No follow-on connections to untrusted destinations from {host}."],
+      "alternatives": ["An internal macro that uses encoded commands for legitimate automation."]
+    }
+  }
+}

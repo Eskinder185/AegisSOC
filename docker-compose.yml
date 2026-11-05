@@ -1,0 +1,57 @@
+# AegisSOC local development stack. All published ports bind to loopback only.
+# Profiles: (default) db only | "app" api+web | "ai" optional Ollama (not started by default)
+name: aegissoc
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: aegissoc
+      POSTGRES_USER: aegissoc
+      POSTGRES_PASSWORD: ${AEGIS_DB_PASSWORD:?run tooling/scripts/init-env first (creates .env)}
+    ports:
+      - "127.0.0.1:${AEGIS_DB_PORT:-5433}:5432"
+    volumes:
+      - aegis_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegissoc -d aegissoc"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    deploy:
+      resources:
+        limits: { memory: 512M }
+  api:
+    profiles: ["app"]
+    build: { context: ./apps/api }
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/aegissoc
+      SPRING_DATASOURCE_USERNAME: aegissoc
+      SPRING_DATASOURCE_PASSWORD: ${AEGIS_DB_PASSWORD}
+      AEGIS_DEV_PASSWORD: ${AEGIS_DEV_PASSWORD:-}
+      JAVA_TOOL_OPTIONS: -Xmx512m
+    ports:
+      - "127.0.0.1:${AEGIS_API_PORT:-8080}:8080"
+    deploy:
+      resources:
+        limits: { memory: 768M }
+  web:
+    profiles: ["app"]
+    build: { context: ./apps/web }
+    depends_on: [api]
+    ports:
+      - "127.0.0.1:${AEGIS_WEB_PORT:-5173}:8080"
+    deploy:
+      resources:
+        limits: { memory: 128M }
+  ollama:
+    profiles: ["ai"]
+    image: ollama/ollama:latest
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - aegis_ollama:/root/.ollama
+volumes:
+  aegis_pgdata:
+  aegis_ollama:

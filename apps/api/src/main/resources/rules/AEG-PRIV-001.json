@@ -1,0 +1,23 @@
+{
+  "id": "AEG-PRIV-001",
+  "name": "Account added to a privileged group",
+  "severity": "HIGH", "confidence": "MEDIUM",
+  "purpose": "Surface unexpected privilege changes while ignoring approved automation accounts.",
+  "description": "Matches privilege-group membership additions. Approved change accounts are excluded explicitly so the exclusion is visible and reviewable.",
+  "attack": { "techniques": ["T1098"], "justification": "Adding an account to a privileged group is the observable action of Account Manipulation." },
+  "definition": {
+    "type": "match",
+    "filter": { "event_class": "privilege", "action": "added_to_privileged_group" },
+    "exclude": { "username": { "in": ["svc-patch"] } },
+    "group_by": ["host", "username"],
+    "window_seconds": 3600,
+    "playbook": {
+      "what": "{username} added an account to a privileged group on {host}.",
+      "why": "Privileged group membership grants broad control. Unplanned additions are a common step after an account is taken over.",
+      "howSure": "Medium. The event itself is certain; whether it was authorized is not known from telemetry alone.",
+      "next": ["Check whether a change ticket or approved maintenance covers this change.", "Review what {username} did before the change.", "Confirm the added member's identity and whether they need the access."],
+      "verify": ["The change is either linked to an approval or reverted.", "Group membership on {host} matches the expected list."],
+      "alternatives": ["Planned administration by a person not on the exclusion list.", "Provisioning automation that should be added to the approved list."]
+    }
+  }
+}
