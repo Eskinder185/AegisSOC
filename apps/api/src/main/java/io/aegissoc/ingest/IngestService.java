@@ -169,11 +169,17 @@ public class IngestService {
     private static String truncate(String s, int n) { return s == null ? "" : s.length() > n ? s.substring(0, n) + "…" : s; }
 
     /** Bounded NDJSON / JSON-array reader for uploads and API bodies. */
-    public static List<JsonNode> parsePayloads(String body, int maxEvents) {
+    public static List<JsonNode> parsePayloads(String body, int maxEvents) { return parsePayloads(body, maxEvents, true); }
+
+    /** @param allowNdjson false for the JSON API: the body must be one JSON array (or one object), never free-form lines. */
+    public static List<JsonNode> parsePayloads(String body, int maxEvents, boolean allowNdjson) {
         List<JsonNode> out = new ArrayList<>();
         String trimmed = body.stripLeading();
         try {
-            if (trimmed.startsWith("[")) {
+            if (!allowNdjson && !trimmed.startsWith("[")) {
+                if (!trimmed.startsWith("{")) throw ApiException.bad("Body must be a JSON array of events");
+                out.add(Json.SAFE.readTree(trimmed));
+            } else if (trimmed.startsWith("[")) {
                 JsonNode arr = Json.SAFE.readTree(trimmed);
                 if (arr.size() > maxEvents) throw ApiException.bad("Too many events: limit is " + maxEvents);
                 arr.forEach(out::add);

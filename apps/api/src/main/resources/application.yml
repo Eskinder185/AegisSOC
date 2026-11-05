@@ -7,6 +7,7 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:}
     hikari:
       maximum-pool-size: 10
+      connection-init-sql: SET statement_timeout = 15000   # every query is bounded; expensive searches fail fast instead of hanging
   flyway:
     enabled: true
     # Never clean in any profile: destructive resets go through the guarded dev-reset endpoint only.

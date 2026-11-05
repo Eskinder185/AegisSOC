@@ -50,7 +50,15 @@ public final class Fixtures {
 
     private Fixtures() {}
 
-    public static Instant defaultAnchor(Instant now) { return now.truncatedTo(ChronoUnit.HOURS).minus(4, ChronoUnit.HOURS); }
+    /** Approximate span (seconds) of each scenario, so the default anchor places the newest event just before "now". */
+    private static final Map<String, Integer> SPAN = Map.of("credential_attack", 4000, "privilege_service_tamper", 3300, "suspicious_process", 3300,
+            "ids_lateral", 10500, "sensor_silence", 5700, "benign_baseline", 10900, "corrupted_feed", 400);
+
+    /** Default anchor is stable inside a 10-minute window so an immediate replay deduplicates instead of duplicating. */
+    public static Instant defaultAnchor(Instant now, String scenarioId) {
+        return now.truncatedTo(ChronoUnit.MINUTES).minusSeconds(now.truncatedTo(ChronoUnit.MINUTES).getEpochSecond() % 600)
+                .minusSeconds(SPAN.getOrDefault(scenarioId, 3600) + 300);
+    }
 
     public static Scenario generate(String id, long seed, Instant anchor, boolean repair) {
         Ctx c = new Ctx(id, seed, anchor);

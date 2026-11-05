@@ -42,7 +42,7 @@ public class IngestController {
         ScenarioRun r = body == null ? new ScenarioRun(null, null, null, null, null) : body;
         long seed = r.seed() == null ? 42L : r.seed();
         Instant anchor;
-        try { anchor = r.anchor() == null ? Fixtures.defaultAnchor(Instant.now()) : Instant.parse(r.anchor()); }
+        try { anchor = r.anchor() == null ? Fixtures.defaultAnchor(Instant.now(), id) : Instant.parse(r.anchor()); }
         catch (DateTimeParseException e) { throw ApiException.bad("anchor must be an ISO-8601 instant"); }
         boolean paced = "paced".equalsIgnoreCase(r.mode());
         int pace = paced ? Math.max(50, Math.min(r.paceMillis() == null ? 250 : r.paceMillis(), 1000)) : 0;
@@ -66,7 +66,7 @@ public class IngestController {
     @PreAuthorize("hasRole('ANALYST')")
     public Map<String, Object> ingestEvents(@RequestBody String body, @RequestParam(defaultValue = "false") boolean synthetic) {
         checkSize(body.length());
-        List<JsonNode> events = IngestService.parsePayloads(body, props.ingest().maxBatchEvents());
+        List<JsonNode> events = IngestService.parsePayloads(body, props.ingest().maxBatchEvents(), false);
         if (events.isEmpty()) throw ApiException.bad("No events supplied");
         return ingest.run(new IngestService.Request(sourceByType("json_ingest"), "json_ingest", null, events, synthetic, Actor.name(), 0));
     }
