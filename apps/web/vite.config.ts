@@ -4,7 +4,8 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 // Dev server binds to loopback only and proxies /api to the local Spring Boot API (same-origin => SameSite=Strict cookies work).
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  base: mode === 'github-pages' ? '/AegisSOC/' : '/',
   plugins: [react(), tailwindcss()],
   server: {
     host: '127.0.0.1',
@@ -21,4 +22,4 @@ export default defineConfig({
     css: false,
     exclude: ['e2e/**', 'node_modules/**'],
   },
-})
+}))
