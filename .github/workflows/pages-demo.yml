@@ -28,7 +28,7 @@ jobs:
         run: npm ci
         working-directory: apps/web
       - name: Build public frontend preview
-        run: npm run build
+        run: npm run build -- --mode github-pages
         working-directory: apps/web
         env:
           GITHUB_PAGES: 'true'
